@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useInterval } from "../../hooks";
-import "./RedditFeed.css";
-import { getFormattedSubredditPostByUrl } from "../../utils/reddit.js";
+import "./style.css";
+import { getFormattedSubredditPostByUrl } from "./utils";
 
-export default function RedditFeed({ url }) {
+export default function RedditFeed() {
   const [redditPostHTML, setRedditPostHTML] = useState(
     "<div class='reddit-post-content'>Loading</div>"
   );
@@ -11,7 +11,7 @@ export default function RedditFeed({ url }) {
 
   useInterval(async () => {
     const htmlRes = await getFormattedSubredditPostByUrl(pendingSearch);
-    setRedditPostHTML(htmlRes);
+    htmlRes && setRedditPostHTML(htmlRes);
   }, 1000);
 
   return (

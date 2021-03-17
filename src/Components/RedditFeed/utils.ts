@@ -15,11 +15,11 @@ const fetchSubredditPosts = async () => {
   }
 };
 
-const getPostHtmlByUrl = async (url) => {
+const getPostHtmlByUrl = async (url: string) => {
   if (url) {
     const posts = await fetchSubredditPosts();
-    let foundPost = undefined;
-    posts.forEach((post) => {
+    let foundPost: any = undefined;
+    posts.forEach((post: any) => {
       if (post.data.url === url) {
         foundPost = post;
       }
@@ -28,7 +28,7 @@ const getPostHtmlByUrl = async (url) => {
   }
 };
 
-const cleanUpHTML = (html) => {
+const cleanUpHTML = (html: any) => {
   const doc = parser.parseFromString(html, "text/html");
 
   const redditPostWrapper = doc.getElementsByClassName("md");
@@ -50,7 +50,7 @@ const cleanUpHTML = (html) => {
   return newDoc;
 };
 
-export const getFormattedSubredditPostByUrl = async (url) => {
+export const getFormattedSubredditPostByUrl = async (url: string) => {
   const unformattedHtml = await getPostHtmlByUrl(url);
 
   if (unformattedHtml) {
