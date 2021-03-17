@@ -19,11 +19,12 @@ const getPostHtmlByUrl = async (url: string) => {
   if (url) {
     const posts = await fetchSubredditPosts();
     let foundPost: any = undefined;
-    posts.forEach((post: any) => {
-      if (post.data.url === url) {
-        foundPost = post;
-      }
-    });
+    posts &&
+      posts.forEach((post: any) => {
+        if (post.data.url === url) {
+          foundPost = post;
+        }
+      });
     return foundPost ? foundPost.data.selftext_html : foundPost;
   }
 };

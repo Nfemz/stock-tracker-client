@@ -1,5 +1,4 @@
 import "./App.css";
-import React from "react";
 import RedditFeed from "./Components/RedditFeed";
 
 function App() {

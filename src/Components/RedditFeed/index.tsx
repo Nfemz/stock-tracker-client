@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import TextField from "@atlaskit/textfield";
 import { useInterval } from "../../hooks";
 import "./style.css";
 import { getFormattedSubredditPostByUrl } from "./utils";
@@ -12,14 +13,15 @@ export default function RedditFeed() {
   useInterval(async () => {
     const htmlRes = await getFormattedSubredditPostByUrl(pendingSearch);
     htmlRes && setRedditPostHTML(htmlRes);
-  }, 1000);
+  }, 2500);
 
   return (
     <div className="reddit-post-wrapper">
-      <h1>Please input the reddit post to follow:</h1>
-      <input
-        className="url-search-bar"
-        onChange={(event) => setPendingSearch(event.target.value)}
+      <TextField
+        placeholder="Enter the reddit url to subscribe to here"
+        onChange={(event) =>
+          setPendingSearch((event.target as HTMLTextAreaElement).value)
+        }
       />
 
       <div
