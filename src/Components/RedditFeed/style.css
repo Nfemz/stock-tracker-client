@@ -5,8 +5,20 @@
   background-color: #ffffff;
   border-radius: 10px;
   border: 1px solid #f0f0f0;
+  flex-wrap: wrap;
 }
 
-.post-image {
-  width: 100%;
+.reddit-post-paragraph {
+  max-width: 100%;
+}
+
+.reddit-post-code {
+  font-family: "Courier New", Courier, monospace;
+}
+
+.reddit-post-code-wrapper {
+  background-color: #fafbfc;
+  border-radius: 5px;
+  padding: 10px;
+  box-shadow: 1px 1px 5px 1px rgba(0, 0, 0, 10%) inset;
 }

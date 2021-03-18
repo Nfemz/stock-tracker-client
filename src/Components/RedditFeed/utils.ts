@@ -37,7 +37,7 @@ const cleanUpHTML = (html: any) => {
 
   const paragraphs = doc.querySelectorAll("p");
   paragraphs.forEach((paragraph) => {
-    paragraph.className += "paragraph-css";
+    paragraph.className += "reddit-post-paragraph";
   });
 
   const anchors = doc.querySelectorAll("a");
@@ -45,6 +45,25 @@ const cleanUpHTML = (html: any) => {
     if (anchor.innerText.startsWith("https://preview.redd.it/")) {
       anchor.innerHTML = `<img class='post-image' alt=${anchor.innerText} src=${anchor.innerText}></img>`;
     }
+  });
+
+  const pres = doc.querySelectorAll("pre");
+  pres.forEach((pre) => {
+    const childElement = pre.children[0];
+    const childElementWrapper = document.createElement("div");
+    childElementWrapper.className += "reddit-post-code-wrapper";
+    childElementWrapper.appendChild(childElement);
+
+    const parentElement = pre.parentElement;
+    const nextSibling = pre.nextSibling;
+    parentElement &&
+      nextSibling &&
+      parentElement.insertBefore(childElementWrapper, nextSibling);
+  });
+
+  const codes = doc.querySelectorAll("code");
+  codes.forEach((code) => {
+    code.className += "reddit-post-code";
   });
 
   const newDoc = "<html>" + doc.documentElement.innerHTML + "</html>";

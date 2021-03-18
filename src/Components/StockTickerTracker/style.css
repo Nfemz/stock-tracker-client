@@ -1,0 +1,9 @@
+.stock-tracker-wrapper {
+  flex: 1;
+  margin: 15px;
+  padding: 15px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #f0f0f0;
+  flex-wrap: wrap;
+}
