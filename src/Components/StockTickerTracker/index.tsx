@@ -26,7 +26,8 @@ export function StockTickerTracker() {
         .addSubscriptionCallback(
           "updatePrice",
           (data: any) => data.ev === "T" && setCurrentPrice(data.p)
-        );
+        )
+        .log();
 
       setCurrentSubscription(subscription);
     }

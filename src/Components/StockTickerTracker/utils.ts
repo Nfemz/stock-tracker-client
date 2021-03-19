@@ -21,14 +21,12 @@ export class StockTickerSubscription {
       this.connection.send(
         `{"action":"subscribe", "params":"${connectionKey}.${this.ticker.toLocaleUpperCase()}"}`
       );
-      const msg = `SUBSCRIPTION LOG: Connection ${connectionKey} added`;
-      console.log(msg);
-      this.subscriptionLog.push(msg);
+      this.subscriptionLog.push(`Connection ${connectionKey} added`);
     } else if (retryCount < 10) {
       setTimeout(() => this.addConnection(connectionKey, ++retryCount), 500);
     } else {
-      const msg = `SUBSCRIPTION LOG: Failed to add connection: ${connectionKey}. Retries exceeded.`;
-      console.log(msg);
+      const msg = `Failed to add connection: ${connectionKey}. Retries exceeded.`;
+      console.error(msg);
       this.subscriptionLog.push(msg);
     }
     return this;
@@ -39,16 +37,12 @@ export class StockTickerSubscription {
       ...this.subscriptionCallbacks,
       [key]: callback,
     };
-    const msg = `SUBSCRIPTION LOG: Callback ${key} added`;
-    console.log(msg);
-    this.subscriptionLog.push(msg);
+    this.subscriptionLog.push(`Callback ${key} added`);
     return this;
   }
 
   closeConnection() {
-    const msg = "SUBSCRIPTION LOG: Closing connection to stocks websocket";
-    console.log(msg);
-    this.subscriptionLog.push(msg);
+    this.subscriptionLog.push("Closing connection to stocks websocket");
     this.connection && this.connection.close();
   }
 
@@ -57,9 +51,7 @@ export class StockTickerSubscription {
       this.connection = new WebSocket("wss://socket.polygon.io/stocks");
 
       this.connection.onopen = (event) => {
-        const msg = "SUBSCRIPTION LOG: Connected to stocks websocket";
-        console.log(msg);
-        this.subscriptionLog.push(msg);
+        this.subscriptionLog.push("Connected to stocks websocket");
         if (this.connection) {
           this.connection.send(`{"action":"auth", "params": "${API_KEY}"}`);
         }
@@ -70,9 +62,7 @@ export class StockTickerSubscription {
 
         data.forEach((chunk: any) => {
           if (chunk.ev === "status") {
-            const msg = `SUBSCRIPTION LOG: ${chunk.message}`;
-            console.log(msg);
-            this.subscriptionLog.push(msg);
+            this.subscriptionLog.push(chunk.message);
           } else {
             Object.values(this.subscriptionCallbacks).forEach(
               (callback: any) => {
@@ -86,11 +76,14 @@ export class StockTickerSubscription {
     return this;
   }
 
+  log() {
+    console.log(this.subscriptionLog);
+    return this.subscriptionLog;
+  }
+
   removeSubscriptionCallback(key: string) {
     delete this.subscriptionCallbacks[key];
-    const msg = `SUBSCRIPTION LOG: Callback ${key} deleted`;
-    console.log(msg);
-    this.subscriptionLog.push(msg);
+    this.subscriptionLog.push(`Callback ${key} deleted`);
     return this;
   }
 }
