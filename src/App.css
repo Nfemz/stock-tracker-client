@@ -1,4 +1,6 @@
 .app-wrapper {
   display: flex;
   background-color: #fafbfc;
+  min-height: 100vh;
+  align-items: flex-start;
 }

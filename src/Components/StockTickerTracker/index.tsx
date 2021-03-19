@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TextField from "@atlaskit/textfield";
 import Button from "@atlaskit/button";
+import { Statistic, Row, Col } from "antd";
 import {
   getLastTickerPrice,
   renderCurrency,
+  renderDeltaAmountCurrency,
+  renderDeltaPercentCurrency,
+  StockStatistics,
   StockTickerSubscription,
 } from "./utils";
+import "antd/dist/antd.css";
 import "./style.css";
 
 export function StockTickerTracker() {
@@ -13,20 +18,32 @@ export function StockTickerTracker() {
   const [PRICE, setPRICE] = useState<number | null>(null);
   const [VWAP, setVWAP] = useState<number | null>(null);
   const [VOL, setVOL] = useState<number | null>(null);
-  const [
-    currentSubscription,
-    setCurrentSubscription,
-  ] = useState<StockTickerSubscription | null>(null);
+  const [TIMESTAMP, setTIMESTAMP] = useState<number | null>(null);
+  const [OPENPRICE, setOPENPRICE] = useState<number | null>(null);
+  const [RSI, setRSI] = useState<number | null>(null);
+  const [sub, setSub] = useState<StockTickerSubscription | null>(null);
+  const [stats, setStats] = useState<StockStatistics | null>(null);
+
+  useEffect(() => {
+    if (stats && PRICE) {
+      const rsi = stats.addPrice(PRICE)?.getRSI();
+      rsi && setRSI(rsi);
+    }
+    // eslint-disable-next-line
+  }, [PRICE]);
 
   async function onClickHandler() {
-    if (currentSubscription) {
-      currentSubscription.closeConnection();
+    if (sub) {
+      sub.closeConnection();
     }
     if (pendingSearch) {
       const lastTickerPrice = await getLastTickerPrice(
         pendingSearch.toLocaleUpperCase()
       );
       setPRICE(lastTickerPrice);
+
+      const statsModule = new StockStatistics();
+      setStats(statsModule);
 
       const subscription = new StockTickerSubscription(pendingSearch)
         .init()
@@ -43,35 +60,99 @@ export function StockTickerTracker() {
         .addSubscriptionCallback(
           "VOL",
           (data: any) => data.ev === "A" && setVOL(data.av)
+        )
+        .addSubscriptionCallback(
+          "TIMESTAMP",
+          (data: any) => data.ev === "T" && setTIMESTAMP(data.t)
+        )
+        .addSubscriptionCallback(
+          "OPENPRICE",
+          (data: any) => data.ev === "A" && setOPENPRICE(data.op)
         );
 
       subscription.log();
 
-      setCurrentSubscription(subscription);
+      setSub(subscription);
     }
+  }
+
+  function getPriceStyle({ small }: { small?: boolean }) {
+    let style = { color: "#000000" };
+    if (OPENPRICE && PRICE) {
+      if (PRICE > OPENPRICE) {
+        style = { color: "#3f8600" };
+      } else if (PRICE < OPENPRICE) {
+        style = { color: "#cf1322" };
+      }
+    }
+
+    if (small) {
+      return { ...style, fontSize: 12 };
+    }
+    return style;
   }
 
   function renderTickerData() {
     return (
       <div>
-        {PRICE ? (
-          <div>
-            <h2>Price:</h2>
-            <h3>{renderCurrency(PRICE)}</h3>
-          </div>
-        ) : null}
-        {VWAP ? (
-          <div>
-            <h2>VWAP:</h2>
-            <h3>{renderCurrency(VWAP)}</h3>
-          </div>
-        ) : null}
-        {VOL ? (
-          <div>
-            <h2>VOL:</h2>
-            <h3>{VOL.toLocaleString()}</h3>
-          </div>
-        ) : null}
+        <Row gutter={16}>
+          {TIMESTAMP ? (
+            <Col style={{ marginBottom: "10px", marginTop: "10px" }}>
+              <h4>{`${new Date(TIMESTAMP).toLocaleDateString()} - ${new Date(
+                TIMESTAMP
+              ).toLocaleTimeString()}`}</h4>
+            </Col>
+          ) : null}
+        </Row>
+        <Row gutter={16}>
+          {PRICE ? (
+            <Col>
+              <Statistic
+                title={pendingSearch?.toLocaleUpperCase()}
+                value={renderCurrency(PRICE)}
+                valueStyle={getPriceStyle({ small: false })}
+              />
+            </Col>
+          ) : null}
+          {PRICE && OPENPRICE ? (
+            <Col
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "flex-end",
+              }}
+            >
+              <Statistic
+                value={renderDeltaAmountCurrency(PRICE, OPENPRICE)}
+                valueStyle={getPriceStyle({ small: true })}
+              />
+              <Statistic
+                value={renderDeltaPercentCurrency(PRICE, OPENPRICE)}
+                valueStyle={getPriceStyle({ small: true })}
+              />
+            </Col>
+          ) : null}
+        </Row>
+        <Row gutter={16}>
+          {VOL ? (
+            <Col>
+              <Statistic title="Today's Volume" value={VOL.toLocaleString()} />
+            </Col>
+          ) : null}
+        </Row>
+        <Row gutter={16}>
+          {VWAP ? (
+            <Col>
+              <Statistic title="VWAP" value={renderCurrency(VWAP)} />
+            </Col>
+          ) : null}
+          {RSI ? (
+            <Col>
+              <Statistic title="RSI" value={RSI.toFixed(2).toLocaleString()} />
+            </Col>
+          ) : null}
+        </Row>
+        <Row gutter={16}></Row>
       </div>
     );
   }

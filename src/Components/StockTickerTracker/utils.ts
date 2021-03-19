@@ -117,8 +117,123 @@ export async function getLastTickerPrice(ticker: string) {
 }
 
 export function renderCurrency(currentPrice: number) {
-  return currentPrice.toLocaleString("en-US", {
+  const displayPrice = currentPrice.toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
   });
+  return displayPrice;
+}
+
+export function renderDeltaPercentCurrency(
+  currentPrice: number | null,
+  openPrice: number | null
+) {
+  if (openPrice && currentPrice) {
+    let sign = "";
+
+    if (currentPrice > openPrice) {
+      sign = "+";
+    } else if (currentPrice < openPrice) {
+      sign = "-";
+    }
+
+    const deltaOpen = (Math.abs(1 - currentPrice / openPrice) * 100).toFixed(2);
+    return `(${sign}${deltaOpen}%)`;
+  }
+}
+
+export function renderDeltaAmountCurrency(
+  currentPrice: number | null,
+  openPrice: number | null
+) {
+  if (openPrice && currentPrice) {
+    let sign = "";
+
+    if (currentPrice > openPrice) {
+      sign = "+";
+    } else if (currentPrice < openPrice) {
+      sign = "-";
+    }
+
+    const deltaOpen = Math.abs(currentPrice - openPrice).toFixed(2);
+    return `(${sign}${deltaOpen})`;
+  }
+}
+
+export class StockStatistics {
+  gainHistory: number[];
+  lossHistory: number[];
+  lastPrice: number | null;
+  lastAverageGain: number | null;
+  lastAverageLoss: number | null;
+  RSI: number | null;
+  RSIPeriod: number;
+
+  constructor() {
+    this.gainHistory = [];
+    this.lossHistory = [];
+    this.lastPrice = null;
+    this.lastAverageGain = null;
+    this.lastAverageLoss = null;
+    this.RSI = null;
+    this.RSIPeriod = 14;
+  }
+
+  addPrice(price: number) {
+    if (!this.lastPrice) {
+      this.lastPrice = price;
+      return;
+    }
+
+    if (price > this.lastPrice) {
+      if (this.gainHistory.length >= this.RSIPeriod) {
+        this.gainHistory.shift();
+      }
+      this.gainHistory.push(price);
+    } else if (price < this.lastPrice) {
+      if (this.lossHistory.length >= this.RSIPeriod) {
+        this.lossHistory.shift();
+      }
+      this.lossHistory.push(price);
+    }
+    this.lastPrice = price;
+    if (
+      this.gainHistory.length === this.RSIPeriod &&
+      this.lossHistory.length === this.RSIPeriod
+    ) {
+      this.calculateRSI();
+    }
+    return this;
+  }
+
+  calculateRSI() {
+    let averageLoss = null,
+      averageGain = null;
+    if (!this.lastAverageGain || !this.lastAverageLoss) {
+      averageLoss =
+        this.lossHistory.reduce((a, b) => a + b, 0) / this.lossHistory.length;
+      averageGain =
+        this.gainHistory.reduce((a, b) => a + b, 0) / this.gainHistory.length;
+    } else {
+      const gainIndex = this.gainHistory.length - 1;
+      const lossIndex = this.lossHistory.length - 1;
+      averageGain =
+        (this.lastAverageGain * gainIndex + this.gainHistory[gainIndex]) /
+        this.gainHistory.length;
+      averageLoss =
+        (this.lastAverageLoss * lossIndex + this.lossHistory[lossIndex]) /
+        this.lossHistory.length;
+    }
+    const RS = averageGain / averageLoss;
+    this.RSI = 100 - 100 / (1 + RS);
+    return this;
+  }
+
+  getRSI() {
+    return this.RSI;
+  }
+
+  setRSIPeriod(period: number) {
+    this.RSIPeriod = period;
+  }
 }
