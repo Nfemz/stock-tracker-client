@@ -12,16 +12,23 @@ export function StockTickerTracker() {
     setCurrentSubscription,
   ] = useState<StockTickerSubscription | null>(null);
 
-  function onClickHandler() {
+  async function onClickHandler() {
     if (currentSubscription) {
       currentSubscription.closeConnection();
     }
     if (pendingSearch) {
-      const newSubscription = new StockTickerSubscription(pendingSearch);
-      newSubscription.openConnection();
-      newSubscription.onPriceChange(setCurrentPrice);
+      const subscriptionCreator = new StockTickerSubscription(pendingSearch);
+      const subscription = subscriptionCreator.init();
 
-      setCurrentSubscription(newSubscription);
+      subscription
+        .addConnection("T")
+        .addConnection("A")
+        .addSubscriptionCallback(
+          "updatePrice",
+          (data: any) => data.ev === "T" && setCurrentPrice(data.p)
+        );
+
+      setCurrentSubscription(subscription);
     }
   }
 
