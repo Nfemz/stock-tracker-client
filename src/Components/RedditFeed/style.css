@@ -1,5 +1,9 @@
+.post-image {
+  max-width: 100%;
+}
+
 .reddit-post-wrapper {
-  flex: 1;
+  flex: 2;
   margin: 15px;
   padding: 15px;
   background-color: #ffffff;

@@ -10,7 +10,9 @@ import "./style.css";
 
 export function StockTickerTracker() {
   const [pendingSearch, setPendingSearch] = useState<string | null>(null);
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [PRICE, setPRICE] = useState<number | null>(null);
+  const [VWAP, setVWAP] = useState<number | null>(null);
+  const [VOL, setVOL] = useState<number | null>(null);
   const [
     currentSubscription,
     setCurrentSubscription,
@@ -24,15 +26,23 @@ export function StockTickerTracker() {
       const lastTickerPrice = await getLastTickerPrice(
         pendingSearch.toLocaleUpperCase()
       );
-      setCurrentPrice(lastTickerPrice);
+      setPRICE(lastTickerPrice);
 
       const subscription = new StockTickerSubscription(pendingSearch)
         .init()
         .addConnection("T")
         .addConnection("A")
         .addSubscriptionCallback(
-          "updatePrice",
-          (data: any) => data.ev === "T" && setCurrentPrice(data.p)
+          "PRICE",
+          (data: any) => data.ev === "T" && setPRICE(data.p)
+        )
+        .addSubscriptionCallback(
+          "VWAP",
+          (data: any) => data.ev === "A" && setVWAP(data.a)
+        )
+        .addSubscriptionCallback(
+          "VOL",
+          (data: any) => data.ev === "A" && setVOL(data.av)
         );
 
       subscription.log();
@@ -42,14 +52,28 @@ export function StockTickerTracker() {
   }
 
   function renderTickerData() {
-    if (currentPrice) {
-      return (
-        <div>
-          <h2>Current Price:</h2>
-          <h3>{renderCurrency(currentPrice)}</h3>
-        </div>
-      );
-    }
+    return (
+      <div>
+        {PRICE ? (
+          <div>
+            <h2>Price:</h2>
+            <h3>{renderCurrency(PRICE)}</h3>
+          </div>
+        ) : null}
+        {VWAP ? (
+          <div>
+            <h2>VWAP:</h2>
+            <h3>{renderCurrency(VWAP)}</h3>
+          </div>
+        ) : null}
+        {VOL ? (
+          <div>
+            <h2>VOL:</h2>
+            <h3>{VOL.toLocaleString()}</h3>
+          </div>
+        ) : null}
+      </div>
+    );
   }
 
   return (
@@ -61,7 +85,11 @@ export function StockTickerTracker() {
           setPendingSearch((event.target as HTMLTextAreaElement).value)
         }
       />
-      <Button appearance="primary" onClick={onClickHandler}>
+      <Button
+        appearance="primary"
+        style={{ marginTop: "10px" }}
+        onClick={onClickHandler}
+      >
         Search Ticker
       </Button>
       {renderTickerData()}
