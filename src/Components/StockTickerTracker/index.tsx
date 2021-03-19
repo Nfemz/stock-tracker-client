@@ -1,7 +1,11 @@
 import { useState } from "react";
 import TextField from "@atlaskit/textfield";
 import Button from "@atlaskit/button";
-import { renderCurrency, StockTickerSubscription } from "./utils";
+import {
+  getLastTickerPrice,
+  renderCurrency,
+  StockTickerSubscription,
+} from "./utils";
 import "./style.css";
 
 export function StockTickerTracker() {
@@ -17,19 +21,34 @@ export function StockTickerTracker() {
       currentSubscription.closeConnection();
     }
     if (pendingSearch) {
-      const subscriptionCreator = new StockTickerSubscription(pendingSearch);
-      const subscription = subscriptionCreator.init();
+      const lastTickerPrice = await getLastTickerPrice(
+        pendingSearch.toLocaleUpperCase()
+      );
+      setCurrentPrice(lastTickerPrice);
 
-      subscription
+      const subscription = new StockTickerSubscription(pendingSearch)
+        .init()
         .addConnection("T")
         .addConnection("A")
         .addSubscriptionCallback(
           "updatePrice",
           (data: any) => data.ev === "T" && setCurrentPrice(data.p)
-        )
-        .log();
+        );
+
+      subscription.log();
 
       setCurrentSubscription(subscription);
+    }
+  }
+
+  function renderTickerData() {
+    if (currentPrice) {
+      return (
+        <div>
+          <h2>Current Price:</h2>
+          <h3>{renderCurrency(currentPrice)}</h3>
+        </div>
+      );
     }
   }
 
@@ -45,11 +64,7 @@ export function StockTickerTracker() {
       <Button appearance="primary" onClick={onClickHandler}>
         Search Ticker
       </Button>
-
-      <h1>Current Price:</h1>
-      <h2>
-        {currentPrice ? renderCurrency(currentPrice) : "No price available"}
-      </h2>
+      {renderTickerData()}
     </div>
   );
 }

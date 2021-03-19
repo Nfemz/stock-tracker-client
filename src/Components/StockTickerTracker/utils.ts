@@ -1,3 +1,5 @@
+import axios from "axios";
+
 const API_KEY = "Dkjzj9Ntl0YvzGFIUGo2id0eVhht_M5M";
 
 export class StockTickerSubscription {
@@ -37,7 +39,7 @@ export class StockTickerSubscription {
       ...this.subscriptionCallbacks,
       [key]: callback,
     };
-    this.subscriptionLog.push(`Callback ${key} added`);
+    this.subscriptionLog.push(`Callback (${key}) added`);
     return this;
   }
 
@@ -51,7 +53,7 @@ export class StockTickerSubscription {
       this.connection = new WebSocket("wss://socket.polygon.io/stocks");
 
       this.connection.onopen = (event) => {
-        this.subscriptionLog.push("Connected to stocks websocket");
+        this.subscriptionLog.push("Connecting");
         if (this.connection) {
           this.connection.send(`{"action":"auth", "params": "${API_KEY}"}`);
         }
@@ -77,8 +79,27 @@ export class StockTickerSubscription {
   }
 
   log() {
-    console.log(this.subscriptionLog);
+    console.log("Log of websocket events:\n", this.subscriptionLog);
     return this.subscriptionLog;
+  }
+
+  removeConnection(connectionKey: string, retryCount: number = 1) {
+    if (
+      this.connection &&
+      this.connection.readyState === this.connection.OPEN
+    ) {
+      this.connection.send(
+        `{"action":"unsubscribe", "params":"${connectionKey}.${this.ticker.toLocaleUpperCase()}"}`
+      );
+      this.subscriptionLog.push(`Connection ${connectionKey} removed`);
+    } else if (retryCount < 10) {
+      setTimeout(() => this.addConnection(connectionKey, ++retryCount), 500);
+    } else {
+      const msg = `Failed to remove connection: ${connectionKey}. Retries exceeded.`;
+      console.error(msg);
+      this.subscriptionLog.push(msg);
+    }
+    return this;
   }
 
   removeSubscriptionCallback(key: string) {
@@ -86,6 +107,13 @@ export class StockTickerSubscription {
     this.subscriptionLog.push(`Callback ${key} deleted`);
     return this;
   }
+}
+
+export async function getLastTickerPrice(ticker: string) {
+  const res = await axios.get(
+    `https://api.polygon.io/v1/last/stocks/${ticker}?&apiKey=${API_KEY}`
+  );
+  return res.data.last.price;
 }
 
 export function renderCurrency(currentPrice: number) {
