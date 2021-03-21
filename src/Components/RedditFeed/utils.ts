@@ -1,33 +1,64 @@
-const axios = require("axios");
 const _ = require("underscore");
 const parser = new DOMParser();
 
-const BASE_URL = "https://www.reddit.com/";
+export class RedditPostSubscription {
+  url: string;
+  connection: WebSocket | null;
+  subscriptionCallbacks: any;
+  subscriptionLog: string[];
 
-const GME_SUBREDDIT = "r/GME.json";
-
-const fetchSubredditPosts = async () => {
-  try {
-    const res = await axios(`${BASE_URL}${GME_SUBREDDIT}`);
-    return res.data.data.children;
-  } catch (e) {
-    console.error(e);
+  constructor(url: string) {
+    this.url = url;
+    this.connection = null;
+    this.subscriptionCallbacks = {};
+    this.subscriptionLog = [];
   }
-};
 
-const getPostHtmlByUrl = async (url: string) => {
-  if (url) {
-    const posts = await fetchSubredditPosts();
-    let foundPost: any = undefined;
-    posts &&
-      posts.forEach((post: any) => {
-        if (post.data.url === url) {
-          foundPost = post;
-        }
+  addSubscriptionCallback(key: string, callback: any) {
+    this.subscriptionCallbacks = {
+      ...this.subscriptionCallbacks,
+      [key]: callback,
+    };
+    this.subscriptionLog.push(`Callback (${key}) added`);
+    return this;
+  }
+
+  closeConnection() {
+    this.subscriptionLog.push(`Closing connection to ${this.url}`);
+    this.connection && this.connection.close();
+  }
+
+  init() {
+    if (!this.connection) {
+      this.connection = new WebSocket("wss://localhost:9000/subscribe/reddit");
+      this.connection.onopen = (event) => {
+        console.warn(`Subscribed to reddit post: ${this.url}`);
+      };
+    }
+
+    this.connection.onmessage = (event: any) => {
+      const data = JSON.parse(event.data);
+
+      data.forEach((chunk: any) => {
+        Object.values(this.subscriptionCallbacks).forEach((callback: any) => {
+          callback(chunk);
+        });
       });
-    return foundPost ? foundPost.data.selftext_html : foundPost;
+    };
+    return this;
   }
-};
+
+  log() {
+    console.log("Log of websocket events:\n", this.subscriptionLog);
+    return this.subscriptionLog;
+  }
+
+  removeSubscriptionCallback(key: string) {
+    delete this.subscriptionCallbacks[key];
+    this.subscriptionLog.push(`Callback ${key} deleted`);
+    return this;
+  }
+}
 
 const cleanUpHTML = (html: any) => {
   const doc = parser.parseFromString(html, "text/html");
@@ -70,15 +101,11 @@ const cleanUpHTML = (html: any) => {
   return newDoc;
 };
 
-export const getFormattedSubredditPostByUrl = async (url: string) => {
-  const unformattedHtml = await getPostHtmlByUrl(url);
-
-  if (unformattedHtml) {
-    const formattedHtml = _.unescape(unformattedHtml);
+export const formatAndSetRedditHTML = (unformattedHTML: any, callback: any) => {
+  if (unformattedHTML) {
+    const formattedHtml = _.unescape(unformattedHTML);
     const cleanedUpHtml = cleanUpHTML(formattedHtml);
 
-    return cleanedUpHtml;
+    callback(cleanedUpHtml);
   }
-
-  return undefined;
 };

@@ -1,19 +1,32 @@
 import { useState } from "react";
 import TextField from "@atlaskit/textfield";
-import { useInterval } from "../../hooks";
+import Button from "@atlaskit/button";
 import "./style.css";
-import { getFormattedSubredditPostByUrl } from "./utils";
+import { formatAndSetRedditHTML, RedditPostSubscription } from "./utils";
 
 export default function RedditFeed() {
   const [redditPostHTML, setRedditPostHTML] = useState(
     "<div class='reddit-post-content'>Loading</div>"
   );
   const [pendingSearch, setPendingSearch] = useState("");
+  const [sub, setSub] = useState<RedditPostSubscription | null>(null);
 
-  useInterval(async () => {
-    const htmlRes = await getFormattedSubredditPostByUrl(pendingSearch);
-    htmlRes && setRedditPostHTML(htmlRes);
-  }, 2500);
+  function onClickHandler() {
+    if (sub) {
+      sub.closeConnection();
+    }
+    if (pendingSearch) {
+      const subscription = new RedditPostSubscription(pendingSearch)
+        .init()
+        .addSubscriptionCallback("THREAD", (data: any) =>
+          formatAndSetRedditHTML(data, setRedditPostHTML)
+        );
+
+      subscription.log();
+
+      setSub(subscription);
+    }
+  }
 
   return (
     <div className="reddit-post-wrapper">
@@ -23,7 +36,13 @@ export default function RedditFeed() {
           setPendingSearch((event.target as HTMLTextAreaElement).value)
         }
       />
-
+      <Button
+        appearance="primary"
+        style={{ marginTop: "10px" }}
+        onClick={onClickHandler}
+      >
+        Search Subreddit
+      </Button>
       <div
         className="reddit-post-content"
         dangerouslySetInnerHTML={{ __html: redditPostHTML }}
