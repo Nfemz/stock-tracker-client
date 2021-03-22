@@ -30,9 +30,17 @@ export class RedditPostSubscription {
 
   init() {
     if (!this.connection) {
-      this.connection = new WebSocket("wss://localhost:9000/subscribe/reddit");
+      this.connection = new WebSocket("ws://localhost:9000/subscribe/reddit");
+
       this.connection.onopen = (event) => {
-        console.warn(`Subscribed to reddit post: ${this.url}`);
+        this.subscriptionLog.push(`Subscribed to reddit post: ${this.url}`);
+        const onOpenPayload = {
+          data: {
+            url: this.url,
+            type: "message",
+          },
+        };
+        this.connection && this.connection.send(JSON.stringify(onOpenPayload));
       };
     }
 

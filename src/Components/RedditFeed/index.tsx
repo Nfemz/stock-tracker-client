@@ -18,8 +18,11 @@ export default function RedditFeed() {
     if (pendingSearch) {
       const subscription = new RedditPostSubscription(pendingSearch)
         .init()
-        .addSubscriptionCallback("THREAD", (data: any) =>
-          formatAndSetRedditHTML(data, setRedditPostHTML)
+        .addSubscriptionCallback(
+          "THREAD",
+          (data: any) =>
+            !(data.type && data.type === "message") &&
+            formatAndSetRedditHTML(data, setRedditPostHTML)
         );
 
       subscription.log();
