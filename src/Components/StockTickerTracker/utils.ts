@@ -109,11 +109,25 @@ export class StockTickerSubscription {
   }
 }
 
-export async function getLastTickerPrice(ticker: string) {
+export async function getLastTickerPrice(
+  ticker: string,
+  errorCallback: any,
+  loadingCallback: any
+) {
   const res = await axios.get(
     `https://api.polygon.io/v1/last/stocks/${ticker}?&apiKey=${API_KEY}`
   );
-  return res.data.last.price;
+
+  const data = res.data;
+
+  if (data.status === "success") {
+    loadingCallback(false);
+    errorCallback(null);
+    return data.last.price;
+  } else {
+    errorCallback(`${ticker} is not a valid ticker`);
+    return null;
+  }
 }
 
 export function renderCurrency(currentPrice: number) {

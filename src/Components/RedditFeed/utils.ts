@@ -109,11 +109,20 @@ const cleanUpHTML = (html: any) => {
   return newDoc;
 };
 
-export const formatAndSetRedditHTML = (unformattedHTML: any, callback: any) => {
+export const formatAndSetRedditHTML = (
+  unformattedHTML: any,
+  callback: any,
+  loadingCallback: any
+) => {
   if (unformattedHTML) {
     const formattedHtml = _.unescape(unformattedHTML);
     const cleanedUpHtml = cleanUpHTML(formattedHtml);
 
     callback(cleanedUpHtml);
+    loadingCallback(false);
   }
+};
+
+export const validateRedditLink = (url: string): boolean => {
+  return url.startsWith("https://www.reddit.com/r/");
 };

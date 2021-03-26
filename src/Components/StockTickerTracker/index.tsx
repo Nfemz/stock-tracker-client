@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import TextField from "@atlaskit/textfield";
 import Button from "@atlaskit/button";
-import { Statistic, Row, Col } from "antd";
+import { Statistic, Row, Col, Spin } from "antd";
 import {
   getLastTickerPrice,
   renderCurrency,
@@ -23,6 +23,8 @@ export function StockTickerTracker() {
   const [RSI, setRSI] = useState<number | null>(null);
   const [sub, setSub] = useState<StockTickerSubscription | null>(null);
   const [stats, setStats] = useState<StockStatistics | null>(null);
+  const [error, setError] = useState<string | null>();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (stats && PRICE) {
@@ -33,13 +35,19 @@ export function StockTickerTracker() {
   }, [PRICE]);
 
   async function onClickHandler() {
+    setLoading(true);
+
     if (sub) {
       sub.closeConnection();
     }
+
     if (pendingSearch) {
       const lastTickerPrice = await getLastTickerPrice(
-        pendingSearch.toLocaleUpperCase()
+        pendingSearch.toLocaleUpperCase(),
+        setError,
+        setLoading
       );
+
       setPRICE(lastTickerPrice);
 
       const statsModule = new StockStatistics();
@@ -70,8 +78,6 @@ export function StockTickerTracker() {
           (data: any) => data.ev === "A" && setOPENPRICE(data.op)
         );
 
-      subscription.log();
-
       setSub(subscription);
     }
   }
@@ -93,68 +99,82 @@ export function StockTickerTracker() {
   }
 
   function renderTickerData() {
-    return (
-      <div>
-        <Row gutter={16}>
-          {TIMESTAMP ? (
-            <Col style={{ marginBottom: "10px", marginTop: "10px" }}>
-              <h4>{`${new Date(TIMESTAMP).toLocaleDateString()} - ${new Date(
-                TIMESTAMP
-              ).toLocaleTimeString()}`}</h4>
-            </Col>
-          ) : null}
-        </Row>
-        <Row gutter={16}>
-          {PRICE ? (
-            <Col>
-              <Statistic
-                title={pendingSearch?.toLocaleUpperCase()}
-                value={renderCurrency(PRICE)}
-                valueStyle={getPriceStyle({ small: false })}
-              />
-            </Col>
-          ) : null}
-          {PRICE && OPENPRICE ? (
-            <Col
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "flex-end",
-              }}
-            >
-              <Statistic
-                value={renderDeltaAmountCurrency(PRICE, OPENPRICE)}
-                valueStyle={getPriceStyle({ small: true })}
-              />
-              <Statistic
-                value={renderDeltaPercentCurrency(PRICE, OPENPRICE)}
-                valueStyle={getPriceStyle({ small: true })}
-              />
-            </Col>
-          ) : null}
-        </Row>
-        <Row gutter={16}>
-          {VOL ? (
-            <Col>
-              <Statistic title="Today's Volume" value={VOL.toLocaleString()} />
-            </Col>
-          ) : null}
-        </Row>
-        <Row gutter={16}>
-          {VWAP ? (
-            <Col>
-              <Statistic title="VWAP" value={renderCurrency(VWAP)} />
-            </Col>
-          ) : null}
-          {RSI ? (
-            <Col>
-              <Statistic title="RSI" value={RSI.toFixed(2).toLocaleString()} />
-            </Col>
-          ) : null}
-        </Row>
-        <Row gutter={16}></Row>
-      </div>
-    );
+    if (loading) {
+      <div style={{ left: "50%", margin: "25px" }}>
+        <Spin size="large" />
+      </div>;
+    } else if (error) {
+      return <div>{error}</div>;
+    } else {
+      return (
+        <div>
+          <Row gutter={16}>
+            {TIMESTAMP ? (
+              <Col style={{ marginBottom: "10px", marginTop: "10px" }}>
+                <h4>{`${new Date(TIMESTAMP).toLocaleDateString()} - ${new Date(
+                  TIMESTAMP
+                ).toLocaleTimeString()}`}</h4>
+              </Col>
+            ) : null}
+          </Row>
+          <Row gutter={16}>
+            {PRICE ? (
+              <Col>
+                <Statistic
+                  title={pendingSearch?.toLocaleUpperCase()}
+                  value={renderCurrency(PRICE)}
+                  valueStyle={getPriceStyle({ small: false })}
+                />
+              </Col>
+            ) : null}
+            {PRICE && OPENPRICE ? (
+              <Col
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <Statistic
+                  value={renderDeltaAmountCurrency(PRICE, OPENPRICE)}
+                  valueStyle={getPriceStyle({ small: true })}
+                />
+                <Statistic
+                  value={renderDeltaPercentCurrency(PRICE, OPENPRICE)}
+                  valueStyle={getPriceStyle({ small: true })}
+                />
+              </Col>
+            ) : null}
+          </Row>
+          <Row gutter={16}>
+            {VOL ? (
+              <Col>
+                <Statistic
+                  title="Today's Volume"
+                  value={VOL.toLocaleString()}
+                />
+              </Col>
+            ) : null}
+          </Row>
+          <Row gutter={16}>
+            {VWAP ? (
+              <Col>
+                <Statistic title="VWAP" value={renderCurrency(VWAP)} />
+              </Col>
+            ) : null}
+            {RSI ? (
+              <Col>
+                <Statistic
+                  title="RSI"
+                  value={RSI.toFixed(2).toLocaleString()}
+                />
+              </Col>
+            ) : null}
+          </Row>
+          <Row gutter={16}></Row>
+        </div>
+      );
+    }
   }
 
   return (
