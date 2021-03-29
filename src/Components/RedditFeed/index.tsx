@@ -9,7 +9,7 @@ import {
   validateRedditLink,
 } from "./utils";
 
-export default function RedditFeed() {
+export function RedditFeed() {
   const [redditPostHTML, setRedditPostHTML] = useState<string | null>(null);
   const [pendingSearch, setPendingSearch] = useState("");
   const [sub, setSub] = useState<RedditPostSubscription | null>(null);

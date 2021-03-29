@@ -1,13 +1,17 @@
 import "./App.css";
-// import RedditFeed from "./Components/RedditFeed";
-// import { StockTickerTracker } from "./Components/StockTickerTracker";
-import { AddComponent } from "./Components/AddComponent";
+import {
+  AddComponent,
+  ModalWrapper,
+  // RedditFeed,
+  // StockTickerTracker,
+} from "./Components";
 
 function App() {
   return (
     <div className="app-wrapper">
       <AddComponent />
       <div className="content-wrapper"></div>
+      <ModalWrapper />
     </div>
   );
 }
